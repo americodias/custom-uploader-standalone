@@ -1,1 +1,2 @@
 custom-uploader/composer/vendor/*
+*.DS_*
