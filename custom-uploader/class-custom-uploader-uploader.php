@@ -308,7 +308,7 @@ class Custom_Uploader_Uploader {
 		
 		if($google_url_shortener_is_enabled)
         	if(!empty($short_url)) {
-            	$message .= 'https://goo.gl/' . $short_url . "\r\n";
+            	$message .= $short_url . "\r\n";
        	 	}
 		
 		if(strlen($metadata))
@@ -339,7 +339,7 @@ class Custom_Uploader_Uploader {
 		
 		if($tumblr_is_enabled) {
 			if($google_url_shortener_is_enabled)
-				$short_url = get_post_meta( $attach_id, 'cup_google_short_url_id', true );
+				$short_url = 'https://goo.gl/' . get_post_meta( $attach_id, 'cup_google_short_url_id', true );
 			else
 				$short_url = null;
 		
@@ -382,7 +382,7 @@ class Custom_Uploader_Uploader {
 		if($facebook_is_enabled) {
 			
 			if($google_url_shortener_is_enabled)
-				$short_url = get_post_meta( $attach_id, 'cup_google_short_url_id', true );
+				$short_url = 'https://goo.gl/' . get_post_meta( $attach_id, 'cup_google_short_url_id', true );
 			else
 				$short_url = null;
 			
