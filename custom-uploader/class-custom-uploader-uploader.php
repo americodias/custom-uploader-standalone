@@ -39,6 +39,7 @@ class Custom_Uploader_Uploader {
 		require_once('class-custom-uploader-google-url-shortener.php');
 		require_once('class-custom-uploader-facebook-uploader.php');
 		require_once('class-custom-uploader-tumblr-uploader.php');
+		require_once('class-custom-uploader-instagram-uploader.php');
 		require_once('class-custom-uploader-exif-reader.php');
 	}
 
@@ -123,6 +124,7 @@ class Custom_Uploader_Uploader {
         $cup_options = get_option( 'cup_options' );            					// Array of All Options
         $facebook_is_enabled = $cup_options['cup_facebook_is_enabled'];
         $tumblr_is_enabled = $cup_options['cup_tumblr_is_enabled']; 
+		$instagram_is_enabled = $cup_options['cup_instagram_is_enabled']; 
 		$mobile_gallery_id = $cup_options['cup_mobile_gallery_id']; 
 		$dslr_gallery_id = $cup_options['cup_dslr_gallery_id']; 
 		
@@ -198,6 +200,10 @@ class Custom_Uploader_Uploader {
 		if($tumblr_is_enabled) {
 			$post_to_social_networks['tumblr'] = "Tumblr";
 			array_push($values['post_to_social_networks'], 'tumblr');
+		}
+		if($instagram_is_enabled) {
+			$post_to_social_networks['instagram'] = "Instragram";
+			array_push($values['post_to_social_networks'], 'instagram');
 		}
 		
         Form::open ("edit", $values, array ('view' => 'SideBySide' . $this->version));
@@ -279,7 +285,7 @@ class Custom_Uploader_Uploader {
 		return $is_mobile;
 	}
 	
-	private function get_message($attach_id, $short_url, $disp_keywords = true) {
+	private function get_message($attach_id, $short_url, $disp_keywords = true, $endl = "\r\n") {
         
 		$cup_options = get_option( 'cup_options' );
 		$google_url_shortener_is_enabled = $cup_options['cup_google_url_shortener_is_enabled'];
@@ -304,11 +310,11 @@ class Custom_Uploader_Uploader {
                 $metadata .= $meta_parameter . ', ';
         }
 		
-        $message = get_the_title($attach_id) . "\r\n";
+        $message = html_entity_decode(get_the_title($attach_id)) . $endl;
 		
 		if($google_url_shortener_is_enabled)
         	if(!empty($short_url)) {
-            	$message .= $short_url . "\r\n";
+            	$message .= $short_url . $endl;
        	 	}
 		
 		if(strlen($metadata))
@@ -318,12 +324,12 @@ class Custom_Uploader_Uploader {
 	        $keywords = get_the_tags($attach_id);
      	
 	        if($keywords) {
-	            $message .= "\r\n\r\n";
+	            $message .= $endl . $endl;
 	            foreach ($keywords as $keyword)
 	                $message .= '#' . preg_replace('/\s+/', '', $keyword->name) . ' ';
 	        }
 		}
-		
+
 		return $message;
 	}
 	
@@ -410,6 +416,38 @@ class Custom_Uploader_Uploader {
         
     }
 
+    function post_to_instagram ($attach_id) {
+		
+        $cup_options = get_option( 'cup_options' );                               // Array of All Options
+        $instagram_is_enabled = $cup_options['cup_instagram_is_enabled'];
+		$instagram_username = $cup_options['cup_instagram_username'];
+		$instagram_password = $cup_options['cup_instagram_password'];
+		$google_url_shortener_is_enabled = $cup_options['cup_google_url_shortener_is_enabled'];
+		
+		if($instagram_is_enabled) {
+			
+			if($google_url_shortener_is_enabled)
+				$short_url = 'https://goo.gl/' . get_post_meta( $attach_id, 'cup_google_short_url_id', true );
+			else
+				$short_url = null;
+			
+			$message = $this->get_message($attach_id, $short_url, true, "\n");
+    
+	        $instagramUploader = new InstagramUploader( $instagram_username, $instagram_password);
+	        $filename = get_attached_file( $attach_id );
+		                                    
+	        $instagram_code = $instagramUploader->upload($filename, $message);
+
+	        if($instagram_code) {
+	            update_post_meta($attach_id, 'cup_instagram_code', $instagram_code);
+				return $instagram_code;
+	        }
+		}
+
+		return null;
+        
+    }
+	
     private function post_to_wordpress () {
         global $_POST;
 
@@ -683,6 +721,15 @@ class Custom_Uploader_Uploader {
 	                if($tumblr_id) {
 						$tumblr_url = 'https://' . $tumblr_blog_name . '.tumblr.com/post/' . $tumblr_id; 
 	                    echo '<p>Tumblr url: <a target="_blank" href="' . $tumblr_url . '">' . $tumblr_url . '</a></p>';
+	                }
+	            }
+	            if(array_search('instagram', $_POST['post_to_social_networks']) !== false) {
+	                // Instagram upload
+	                $instagram_code = $this->post_to_instagram($attach_id);
+            
+	                if($instagram_code) {
+						$instagram_url = 'https://www.instagram.com/p/' . $instagram_code; 
+	                    echo '<p>Instagram url: <a target="_blank" href="' . $instagram_url . '">' . $instagram_url . '</a></p>';
 	                }
 	            }
 			}
