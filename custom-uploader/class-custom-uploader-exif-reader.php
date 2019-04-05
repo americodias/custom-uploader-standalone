@@ -201,7 +201,6 @@ class ExifReader{
         $iptc = null;
 
         if ( is_callable('exif_read_data') ) {
-          echo $image;
             $exif  = exif_read_data($image, 0, true);
 
             if ( is_callable( 'iptcparse' ) ) {
